@@ -65,6 +65,7 @@ class DokuUtils
         bsIDhM4NOoJ4NPgCoNKozMjdJsES9I98qxuW1iPJcvuhnOnbVw==
         -----END RSA PRIVATE KEY-----
         EOD;
+        \Log::info('StringToSign : ' . $stringToSign);
         openssl_sign($stringToSign, $binarySignature, $privateKey, $algorithm);
         $signature = base64_encode($binarySignature);
         return $signature;

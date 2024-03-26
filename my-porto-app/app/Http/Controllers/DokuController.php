@@ -38,6 +38,7 @@ class DokuController extends Controller
         $accessToken = $this->generateCustomAccessToken();
         $newSignature = DokuUtils::generateSignatureAsymmetric($requestTimestamp);
         $newtimestamp = DokuUtils::generateTimestamp();
+        $clientId = env('DOKU_CLIENT_ID');
         \Log::info('-- Signature Validation --');
         \Log::info('X-SIGNATURE local : '. $newSignature);
         \Log::info('X-SIGNATURE request : '. $requestSignature);
@@ -55,6 +56,7 @@ class DokuController extends Controller
         if ($validator->fails()) {
             $errorMessages = $validator->errors()->all();
             \Log::info('Error messages: ' . json_encode($errorMessages));
+            \Log::info('X-CLIENT-KEY local : '. $clientId);
 
             $responseCode = '4017300';
             $responseMessage = 'Unauthorized. Unknown Client';
@@ -204,6 +206,23 @@ class DokuController extends Controller
         return response()->json([
             'responseCode' => DokuUtils::generateTokenB2B($timestamp, $signature)
         ], 200);
+    }
+
+    public function notificationSnap(Request $request)
+    {
+        $responseBody = array(
+            'responseCode' => '2002500',
+            'responseMessage' => 'Success',
+            'virtualAccountData' => array(
+                'partnerServiceId' => '   77777',
+                'customerNo' => '0000000000001',
+                'virtualAccountNo' => '   777770000000000001',
+                'virtualAccountName' => 'Toru Yamashita',
+                'paymentRequestId' => '12839218738127830'
+                )
+            );
+        $response = response()->json($responseBody);
+        return $response;
     }
 
 }

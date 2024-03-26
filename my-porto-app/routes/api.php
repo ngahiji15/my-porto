@@ -12,3 +12,4 @@ Route::get('/user', function (Request $request) {
 Route::post('/auth/v1/token', [DokuController::class, 'generateAccessToken']);
 Route::post('/snap/danamon-inquiry', [DokuController::class, 'inquiryDanamon']);
 Route::post('/test/tokenB2B', [DokuController::class, 'generateQRIS']);
+Route::post('/v1/transfer-va/payment', [DokuController::class, 'notificationSnap']);
