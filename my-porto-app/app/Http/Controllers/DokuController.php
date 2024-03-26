@@ -50,7 +50,7 @@ class DokuController extends Controller
         ], [
             'X-TIMESTAMP' => 'required|date_format:Y-m-d\TH:i:sP',
             'X-CLIENT-KEY' => 'required|in:'.env('DOKU_CLIENT_ID'),
-            'X-SIGNATURE' => 'required|in:'.$newSignature
+            'X-SIGNATURE' => 'required|in:'.$requestSignature
         ]);
 
         if ($validator->fails()) {
