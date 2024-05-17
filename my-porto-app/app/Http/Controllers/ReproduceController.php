@@ -121,17 +121,8 @@ class ReproduceController extends Controller
             "requestid: " . $inv . PHP_EOL .
             "Berhasil" . PHP_EOL .
             "-------------------------" . PHP_EOL;
-        file_put_contents('./log_' . date("j.n.Y") . '.txt', $log, FILE_APPEND);
         $response = response()->json($Body);
         $response ->header('Client-Id', $clientId)->header('Request-Id', $requestid)->header('Response-Timestamp', $timestamp)->header('Signature', $finalsignature);
-        $log  = "Signature Generate: " . $finalsignature . PHP_EOL .
-            "Digest: " . $digest . PHP_EOL .
-            "target path: " . $path . PHP_EOL .
-            "timestamp: " . $timestamp . PHP_EOL .
-            "requestid: " . $requestid . PHP_EOL .
-            "Berhasil" . PHP_EOL .
-            "-------------------------" . PHP_EOL;
-        file_put_contents('./log_' . date("j.n.Y") . '.txt', $log, FILE_APPEND);
         //$this->response->setJSON($notificationBody, 200);
         return $response;
     }
