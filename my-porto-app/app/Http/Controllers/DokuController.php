@@ -43,12 +43,17 @@ class DokuController extends Controller
         $newtimestamp = DokuUtils::generateTimestamp();
         $clientId = env('DOKU_CLIENT_ID');
         $resultSignature = DokuUtils::validationSignatureAsymmetric($requestTimestamp, $requestSignature);
-        $expectedResult = 'Signature Match';
+        if($resultSignature == 'Signature Match'){
+            $expectedResult = $requestSignature;
+        }else{
+            $expectedResult = 'error';
+        }
+        
 
         $validator = Validator::make([
             'X-TIMESTAMP' => $requestTimestamp,
             'X-CLIENT-KEY' => $requestClientKey,
-            'X-SIGNATURE' => $resultSignature
+            'X-SIGNATURE' => $requestSignature
         ], [
             'X-TIMESTAMP' => 'required|date_format:Y-m-d\TH:i:sP',
             'X-CLIENT-KEY' => 'required|in:'.env('DOKU_CLIENT_ID'),
