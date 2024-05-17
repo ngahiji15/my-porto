@@ -56,8 +56,8 @@ class ReproduceController extends Controller
         $vanum = $bodynotif['virtual_account_info']['virtual_account_number'];
         $merchantunique = $bodynotif['virtual_account_info']['merchant_unique_reference'];
         $binbilling = $bodynotif['virtual_account_info']['identifier'][0]['value'];
-        $clientId = 'BRN-0222-1686707950912';
-        $secretKey = 'SK-gKtAK63xK2XfAfLlMdDl';
+        $clientId = env('DOKU_CLIENT_ID');
+        $secretKey = env('DOKU_SECRET_KEY');
         date_default_timezone_set('UTC');
         $timestamp      = date('Y-m-d\TH:i:s\Z');
         $requestid = $notificationHeader['Request-Id'];
