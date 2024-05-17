@@ -212,7 +212,7 @@ class DokuController extends Controller
                 'currency' => 'IDR'
             )
         );
-        \Log::info('Response Body : ' . $responseBody);
+        \Log::info('Response Body : ' . json_encode($responseBody));
         $newTimestamp = DokuUtils::generateTimestamp();
         $newExtId = DokuUtils::generateRequestid();
         $digest = DokuUtils::generateDigest($responseBody);
