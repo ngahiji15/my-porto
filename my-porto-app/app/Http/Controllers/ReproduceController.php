@@ -51,12 +51,13 @@ class ReproduceController extends Controller
         $notificationHeader = getallheaders();
         $notificationBody = file_get_contents('php://input');
         \Log::info('=== DIPC VA BNI NON SNAP ===');
+        \Log::info(json_decode($notificationBody, true));
         $bodynotif = json_decode($notificationBody, true);
         $vanum = $bodynotif['virtual_account_info']['virtual_account_number'];
         $merchantunique = $bodynotif['virtual_account_info']['merchant_unique_reference'];
         $binbilling = $bodynotif['virtual_account_info']['identifier'][0]['value'];
-        $clientId = 'BRN-0201-1700032219790';
-        $secretKey = 'SK-Ho5DslJCYCuwZMOYUZwj';
+        $clientId = 'BRN-0222-1686707950912';
+        $secretKey = 'SK-gKtAK63xK2XfAfLlMdDl';
         date_default_timezone_set('UTC');
         $timestamp      = date('Y-m-d\TH:i:s\Z');
         $requestid = $notificationHeader['Request-Id'];
@@ -116,13 +117,6 @@ class ReproduceController extends Controller
         \Log::info('=== SIGNATURE COMPONENT ===');
         $signature = base64_encode(hash_hmac('sha256', $abc, $secretKey, true));
         $finalsignature = "HMACSHA256=" . $signature;
-        $log  = "Signature Generate: " . $finalsignature . PHP_EOL .
-            "Digest: " . $digest . PHP_EOL .
-            "target path: " . $path . PHP_EOL .
-            "timestamp: " . $timestamp . PHP_EOL .
-            "requestid: " . $inv . PHP_EOL .
-            "Berhasil" . PHP_EOL .
-            "-------------------------" . PHP_EOL;
         $response = response()->json($Body);
         $response ->header('Client-Id', $clientId)->header('Request-Id', $requestid)->header('Response-Timestamp', $timestamp)->header('Signature', $finalsignature);
         //$this->response->setJSON($notificationBody, 200);
