@@ -1,6 +1,9 @@
 <?php
 
 namespace App\Utils;
+use App\Models\Payment;
+use App\Models\User;
+use Illuminate\Http\Request;
 
 class DokuUtils
 {
@@ -8,22 +11,57 @@ class DokuUtils
     {
         date_default_timezone_set('Asia/Jakarta');
         $timestamp = date("Y-m-d\TH:i:sP");
-        return $timestamp;;
+        return $timestamp;
+    }
+
+    public static function generateTimestampOld()
+    {
+        date_default_timezone_set('UTC');
+        $timestamp = date('Y-m-d\TH:i:s\Z');
+        return $timestamp;
     }
 
     public static function generateSignatureSymmetric($token, $digest, $timeStamp, $path)
     {
-        $stringToSign = 'POST' . ':' . $path . ':' . $token . ':' . $digest . ':' . $timeStamp;
+        \Log::info('----- Geenerate Signature Symmetric -----');
+        $newToken = str_replace('Bearer ', '', $token);
+        $stringToSign = 'POST' . ':' . $path . ':' . $newToken . ':' . $digest . ':' . $timeStamp;
+        \Log::info('stringToSign : ' . $stringToSign);
         $secretKey = env('DOKU_SECRET_KEY');
         $signature = base64_encode(hash_hmac('sha512', $stringToSign, $secretKey, true));
         return $signature;
     }
 
     public static function generateDigest($body)
-    {
+    {   
+        \Log::info('----- Generate Digest -----');
+        \Log::info($body);
         $newBody = hash('sha256', json_encode($body,JSON_UNESCAPED_SLASHES));
+        \Log::info('Digest : ' . $newBody);
         return $newBody;
     }
+
+    public static function generateDigestOld($body)
+    {   
+        \Log::info('----- Generate Digest -----');
+        \Log::info($body);
+        $digest = base64_encode(hash('sha256', json_encode($body), true));
+        \Log::info('Digest : ' . $digest);
+        return $digest;
+    }
+
+    public static function generateDigestJSON($body)
+    {   
+        \Log::info('----- Generate Digest -----');
+        // Mengonversi data JSON menjadi string
+        $jsonBody = json_encode($body);
+        \Log::info($jsonBody);
+        // Menghasilkan digest dari string JSON
+        $newBody = hash('sha256', $jsonBody);
+        \Log::info('Digest : ' . $newBody);
+        return $newBody;
+    }
+
 
     public static function generateRequestid()
     {
@@ -31,8 +69,46 @@ class DokuUtils
         return $requestid;
     }
 
+    public static function validationSignatureAsymmetric($waktu, $signature)
+    {
+        \Log::info('----- Signature Asymmetric Validation -----');
+        try {
+            $publicKey = <<<EOD
+            -----BEGIN PUBLIC KEY-----
+            MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3KhxblAJODF3TNsaWAIKOdJE4GF0zWJjRo3X0H8+lDqhfCHwQx01Znhv36IrJ8fHaqqPX3jQJdyCM88O4NcxbgNqhtbvyKqW7lza1zd/1eTtCBZ6q3qrr2N6h8EKI2nxz4e/GgcMnskkpGFSwjN89sGKWUxubn/1QSJwX7ET9JbJqNLiy1AXe3OglGqGHlqOurw820OaL88jfVdqlLo07Z2513/WJXOBU3WIp7bf9pKeewepxqdia0A+UTBBEyJNgg2wHj6csdXvDxDrDqkgT1gECRtxzZtGQ4+qfK9yjzD926LcA7waQvKZrHQO2ryrVppYNHZ5pOinWHewpjHW2wIDAQAB
+            -----END PUBLIC KEY-----
+            EOD;
+
+            // StringToSign = client_ID+"|"+X-TIMESTAMP
+            $StringToSign = env('DOKU_CLIENT_ID') . '|' . $waktu;
+            \Log::info('StringToSign : ' . $StringToSign);
+            $verifier = openssl_verify($StringToSign, base64_decode($signature), $publicKey, OPENSSL_ALGO_SHA256);
+            \Log::info('Result : '.$verifier);
+            if ($verifier === 1) {
+            \Log::info('Result : Signature Match');
+            \Log::info('----- Finish Signature Asymmetric Validation -----');
+            $result = 'Signature Match';
+            return $result;
+            } elseif ($verifier === 0) {
+            \Log::info('Result : Signature Unmatch');
+            \Log::info('----- Finish Signature Asymmetric Validation -----');
+            $result = 'Signature Unmatch';
+            return $result; // signature tidak valid
+            } else {
+            \Log::info('Result : Failed Verification Signature.');
+            \Log::info('----- Finish Signature Asymmetric Validation -----');
+            throw new Exception('Failed Verification Signature.');
+            }
+        } catch (Exception $error) {
+            echo 'Error in verifySignatureToken: ' . $error->getMessage();
+            \Log::info('----- Finish Signature Asymmetric Validation -----');
+            return false;
+        }
+    }
+
     public static function generateSignatureAsymmetric($timestamp)
     {
+        \Log::info('----- Generate Signature Asymmetric -----');
         $stringToSign = env('DOKU_CLIENT_ID')."|".$timestamp;
         $algorithm = "SHA256";
         $binarySignature = "";
@@ -68,6 +144,8 @@ class DokuUtils
         \Log::info('StringToSign : ' . $stringToSign);
         openssl_sign($stringToSign, $binarySignature, $privateKey, $algorithm);
         $signature = base64_encode($binarySignature);
+        \Log::info('Signature : ' . $signature);
+        \Log::info('----- Finish Generate Signature Asymmetric -----');
         return $signature;
     }
 
@@ -95,5 +173,131 @@ class DokuUtils
         curl_close($ch);
         $bodyResponse = json_decode($responseJson, true);
         return $bodyResponse;
+    }
+
+    public static function generateSignatureOld($clientid, $sharedkey, $timestamp, $requestid, $digest, $path)
+    {
+        $abc = "Client-Id:" . $clientid . "\n" . "Request-Id:" . $requestid . "\n" . "Request-Timestamp:" . $timestamp . "\n" . "Request-Target:" . $path . "\n" . "Digest:" . $digest;
+        \Log::info($abc);
+        $signature = base64_encode(hash_hmac('sha256', $abc, $sharedkey, true));
+        \Log::info('HMACSHA256='.$signature);
+        return $signature;
+    }
+    
+    public static function generateCheckoutUrl($sessionid, $name, $email, $amount, $type, $orderType)
+    {
+        $clientId = env("DOKU_CLIENT_ID");
+        $secretKey = env("DOKU_SECRET_KEY");
+        \Log::info('SharedKey :' . $secretKey);
+        \Log::info('SessionId : ' . $sessionid);
+        $requestId = DokuUtils::generateRequestid();
+        $currentDateTime = new \DateTime();
+        $currentDateTime->modify('+7 hours +120 minutes');
+        $formattedDateTime = $currentDateTime->format('Y-m-d H:i:s');        
+        $path = '/checkout/v1/payment';
+        switch ($type) {
+            case 'demo':
+                $domain = 'https://api-sandbox.doku.com';
+                break;
+            case 'production':
+                $domain = 'https://api.doku.com';
+                break;
+            default:
+                throw new InvalidArgumentException('Tipe lingkungan tidak valid: ' . $type);
+        }
+
+        $user = User::where('name', $name)->first();
+        if ($user) {
+            $user_id = $user->id;
+        } else {
+            $newUser = new User();
+            $newUser->name = $name;
+            $newUser->email = $email;
+            $newUser->password = '1234';
+            $newUser->save();
+            $user_id = $newUser->id;
+        }
+        
+        $url = $domain . $path;
+        $timestamp = DokuUtils::generateTimestampOld();
+        $invoice = DokuUtils::generateRequestid();
+        $callback = 'ashddq.online/result/' . $invoice;
+        $Body = [
+            'order' => [
+                'amount' => $amount,
+                'invoice_number' => $invoice,
+                'session_id' => $sessionid,
+                'callback_url' => $callback,
+            ],
+            'payment' => [
+                'payment_due_date' => 120,
+            ],
+            'customer' => [
+                'id' => 'ashddq' . $name,
+                'name' => $name,
+                'email' => $email,
+            ],
+        ];
+
+        $digest = DokuUtils::generateDigestOld($Body);
+        \Log::info(json_encode($Body));
+        $signature = DokuUtils::generateSignatureOld($clientId, $secretKey, $timestamp, $requestId, $digest, $path);
+
+        // Inisialisasi CURL
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($Body));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Client-Id: ' . $clientId,
+            'Request-Id: ' . $requestId,
+            'Request-Timestamp: ' . $timestamp,
+            'Signature: HMACSHA256=' . $signature,
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $responseArr = json_decode($response, true);
+        $urlCheckout = $responseArr['response']['payment']['url'] ?? null;
+
+        if ($httpcode === 200) {
+            $message = $responseArr['message'] ?? null;
+            \Log::info($response);
+            $existingPayment = Payment::where('session_id', $sessionid)->first();
+            if ($existingPayment) {
+                $existingPayment->invoice_number = $invoice;
+                $existingPayment->payment_channel = 'Doku Checkout';
+                $existingPayment->user_id = $user_id;
+                $existingPayment->status = 'PENDING';
+                $existingPayment->type = $type;
+                $existingPayment->order_type = $orderType;
+                $existingPayment->expired_date = $formattedDateTime;
+                $existingPayment->payment_code = $urlCheckout;
+                $existingPayment->save();
+            } else {
+                \Log::error('Payment record not found for session_id: ' . $sessionid);
+                return [
+                    "httpCode" => 404,
+                    "message" => "Payment record not found",
+                ];
+            }
+
+            $data = [
+                "httpCode" => $httpcode,
+                "message" => $message,
+                "urlCheckout" => $urlCheckout,
+            ];
+            return $data;
+        } else {
+            $message = $responseArr['error']['message'] ?? null;
+            \Log::info($response);
+            $data = [
+                "httpCode" => $httpcode,
+                "message" => $message,
+            ];
+            return $data;
+        }
     }
 }

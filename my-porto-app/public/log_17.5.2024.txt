@@ -1,0 +1,21 @@
+Signature Generate: HMACSHA256=FfB6LYqZFOtH6EPAFJjkxYMgCfmc3Ia6swuBBDaepE4=
+Digest: B9bm/DdRgQXjRBandDMBZFebQ//Jzfv3DFZR6NpYDeY=
+target path: /api/inquiry-bni
+timestamp: 2024-05-17T07:03:23Z
+requestid: INV-1715929403
+Berhasil
+-------------------------
+Signature Generate: HMACSHA256=txq9FHgBsTMJFUJTKzHZ+4nb6TQ+8zzIYGyBAseLNLk=
+Digest: lpkYDb2DrIDDGqBqW1zNEtyIbDt+sDFVk+IPamzhYTc=
+target path: /api/inquiry-bni
+timestamp: 2024-05-17T07:06:28Z
+requestid: INV-1715929588
+Berhasil
+-------------------------
+Signature Generate: HMACSHA256=txq9FHgBsTMJFUJTKzHZ+4nb6TQ+8zzIYGyBAseLNLk=
+Digest: lpkYDb2DrIDDGqBqW1zNEtyIbDt+sDFVk+IPamzhYTc=
+target path: /api/inquiry-bni
+timestamp: 2024-05-17T07:06:28Z
+requestid: 1234
+Berhasil
+-------------------------
