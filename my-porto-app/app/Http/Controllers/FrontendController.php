@@ -120,6 +120,7 @@ class FrontendController extends Controller
         $expiredDate = $payment->expired_date ?? null;
         $userId = $payment->user_id ?? null;
         $urlCheckout = $payment->payment_code ?? null;
+        $statusPayment = $payment->status ?? null;
         \Log::info($userId);
 
         $userData = User::where('id', $userId)->latest()->first();
@@ -127,6 +128,6 @@ class FrontendController extends Controller
 
         \Log::info($totalAmount);
         //validasi sessionId (if SessionId == getSessionId --> check status (status == PENDING --> continue send data[url and other], status == COMPLETED --> Send data success payment already paid), SessionId != getSessionId --> send alert your session has ended, please try with new checkout.)
-        return view('payment', ['cartItems' => $cartItems, 'totalAmount' => $totalAmount, 'method' => $method, 'invoice' => $invoice, 'expiredDate' => $expiredDate, 'name' => $userName, 'urlCheckout' => $urlCheckout]);
+        return view('payment', ['cartItems' => $cartItems, 'totalAmount' => $totalAmount, 'method' => $method, 'invoice' => $invoice, 'expiredDate' => $expiredDate, 'name' => $userName, 'urlCheckout' => $urlCheckout, 'status'=> $statusPayment]);
     }
 }

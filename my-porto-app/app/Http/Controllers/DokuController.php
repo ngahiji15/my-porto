@@ -247,7 +247,7 @@ class DokuController extends Controller
         //signature validation
         $requestSignature = $request->header('X-SIGNATURE');
         $requestAuthorization = $request->header('Authorization');
-        $digest = DokuUtils::generateDigestJSON($requestBody);
+        $digest = DokuUtils::generateDigestJSON($requestData);
         $requestTimestamp = $request->header('X-TIMESTAMP');
         $hour = substr($requestTimestamp, 11, 2);
         $hour = str_pad($hour - 7, 2, '0', STR_PAD_LEFT);
@@ -255,7 +255,7 @@ class DokuController extends Controller
         $newTimestamp = substr($newTimestamp, 0, -6) . 'Z';
         $requestClientKey = $request->header('X-PARTNER-ID');
         $path = "/api/v1/transfer-va/payment";
-        $localSignature = DokuUtils::generateSignatureSymmetric($requestAuthorization, $digest, $newTimestamp, $path);
+        $localSignature = DokuUtils::generateSignatureSymmetric($requestAuthorization, $digest, $requestTimestamp, $path);
         $headerString = '';
         foreach($request->header() as $key => $value) {
             $headerString .= $key . ': ' . implode(', ', $value) . ', ';
@@ -263,6 +263,7 @@ class DokuController extends Controller
         $headerString = rtrim($headerString, ', ');
         \Log::info('Request Header: ' . $headerString);
         \Log::info('Request Body : ' . json_encode($requestData));
+        \Log::info('Local Signature : ' . $localSignature);
         $validator = Validator::make([
             'X-SIGNATURE' => $requestSignature
         ], [

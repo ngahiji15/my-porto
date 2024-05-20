@@ -4,6 +4,7 @@ namespace App\Utils;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 
 class DokuUtils
 {
@@ -51,17 +52,21 @@ class DokuUtils
     }
 
     public static function generateDigestJSON($body)
-    {   
+    {
         \Log::info('----- Generate Digest -----');
-        // Mengonversi data JSON menjadi string
-        $jsonBody = json_encode($body);
+        if (isset($body['partnerServiceId'])) {
+            $body['partnerServiceId'] = "    " . $body['partnerServiceId'];
+        }
+        $jsonBody = json_encode($body, JSON_UNESCAPED_SLASHES);
+        \Log::info($body);
         \Log::info($jsonBody);
-        // Menghasilkan digest dari string JSON
-        $newBody = hash('sha256', $jsonBody);
-        \Log::info('Digest : ' . $newBody);
-        return $newBody;
+        $digest = hash('sha256', $jsonBody);
+        \Log::info('Digest: ' . $digest);
+    
+        return $digest;
     }
-
+    
+    
 
     public static function generateRequestid()
     {
@@ -221,7 +226,7 @@ class DokuUtils
         $url = $domain . $path;
         $timestamp = DokuUtils::generateTimestampOld();
         $invoice = DokuUtils::generateRequestid();
-        $callback = 'ashddq.online/result/' . $invoice;
+        $callback = URL::to('/payment');
         $Body = [
             'order' => [
                 'amount' => $amount,

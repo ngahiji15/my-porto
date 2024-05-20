@@ -49,4 +49,28 @@ class ControllerUtils
             return null;
         }
     }
+
+    public static function updatePaymentStatus($invoice, $paymentCode, $paymentChannel)
+    {
+        $currentDateTime = new \DateTime();
+        $currentDateTime->modify('+7 hours');
+        $formattedDateTime = $currentDateTime->format('Y-m-d H:i:s'); 
+        $payment = Payment::where('invoice_number', $invoice)->first();
+        if($payment) {
+            $payment->status = 'SUCCESS';
+            $payment->payment_code = $paymentCode;
+            $payment->payment_channel = 'Doku Checkout -> ' . $paymentChannel;
+            $payment->update_date = $formattedDateTime;
+            $payment->save();
+            \Log::info('update payment status ok!');
+            return 'ok';
+        } else {
+            \Log::error('Payment record not found for invoice : ' . $invoice);
+            return [
+                "httpCode" => 404,
+                "message" => "Payment record not found",
+            ];
+        }
+    }
+
 }

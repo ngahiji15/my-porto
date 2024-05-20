@@ -51,6 +51,10 @@
                                             <th>Customer Name</th>
                                             <td>{{ $name }}</td>
                                         </tr>
+                                        <tr>
+                                            <th>Payment Status</th>
+                                            <td>{{ $status }}</td>
+                                        </tr>
                                         <tr class="no-margin-bottom">
                                             <th>Payment Method</th>
                                             <td>{{ $method }}</td>
@@ -59,6 +63,10 @@
                                         <tr>
                                             <th>VA Number</th>
                                             <td>12345</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Payment Status</th>
+                                            <td>{{ $status }}</td>
                                         </tr>
                                         @endif
                                     </tbody>
@@ -84,6 +92,7 @@
                                 </div>
                             </div>
 
+                            @if($status != 'SUCCESS')
                             <div class="card-body border-top text-center">
                                 @if($method == 'Doku Checkout')
                                 <a class="btn btn-black w-100" id="checkoutButton">Make Payment</a>
@@ -93,6 +102,7 @@
                                 <small class="d-block mt-2"><cite>click <a href="https://sandbox.doku.com/integration/simulator/" target="_blank"><strong>here</strong></a> to simulate this payment</cite></small>
                                 @endif
                             </div>
+                            @endif
                         </div>
                     </div>
                 @endif
