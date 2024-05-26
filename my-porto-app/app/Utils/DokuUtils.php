@@ -46,9 +46,68 @@ class DokuUtils
     {   
         \Log::info('----- Generate Digest -----');
         \Log::info($body);
-        $digest = base64_encode(hash('sha256', json_encode($body), true));
+        if (is_string($body) && is_array(json_decode($body, true)) && (json_last_error() == JSON_ERROR_NONE)) {
+            \Log::info('Body is JSON: ' . $body);
+            $digest = base64_encode(hash('sha256', $body, true));
+        } else {
+            \Log::info('Body array');
+            $jsonBody = self::jsonEncodeWithTwoSpaceIndentation($body);
+            \Log::info('JSON Body: ' . $jsonBody);
+            $digest = base64_encode(hash('sha256', $jsonBody, true));
+        }
         \Log::info('Digest : ' . $digest);
         return $digest;
+    }
+    
+    private static function jsonEncodeWithTwoSpaceIndentation($data)
+    {
+        $json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        return preg_replace_callback('/^( +)/m', function ($m) {
+            return str_repeat(' ', (int)strlen($m[1]) / 4 * 2);
+        }, $json);
+    }
+
+    public static function generateDigestOldGenerate($body)
+    {
+        \Log::info('----- Generate Digest -----');
+        \Log::info($body);
+        
+        // Convert array body to JSON string if it's an array
+        if (is_array($body)) {
+            $jsonBody = json_encode($body, JSON_UNESCAPED_SLASHES);
+        } else {
+            $jsonBody = $body;
+        }
+    
+        // Add backslashes before slashes
+        $jsonBody = str_replace('/', '\\/', $jsonBody);
+        \Log::info('JSON Body after adding backslashes: ' . $jsonBody);
+    
+        // Minify JSON
+        $minifiedJsonBody = self::minifyJson($jsonBody);
+        \Log::info('Minified JSON Body: ' . $minifiedJsonBody);
+    
+        // Generate SHA-256 digest
+        $digest = base64_encode(hash('sha256', $minifiedJsonBody, true));
+        \Log::info('Digest : ' . $digest);
+    
+        return $digest;
+    }
+    
+    private static function minifyJson($json)
+    {
+        // Menggunakan regex untuk menghapus spasi yang tidak diperlukan, kecuali dalam value
+        $tokens = preg_split('/(".*?"|\s*[:,{}\[\]])/', $json, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+        $result = '';
+        foreach ($tokens as $token) {
+            // Jangan menghapus whitespace dalam value string
+            if (preg_match('/^".*?"$/', $token)) {
+                $result .= $token;
+            } else {
+                $result .= trim($token);
+            }
+        }
+        return $result;
     }
 
     public static function generateDigestJSON($body)
@@ -180,8 +239,11 @@ class DokuUtils
         return $bodyResponse;
     }
 
-    public static function generateSignatureOld($clientid, $sharedkey, $timestamp, $requestid, $digest, $path)
+    public static function generateSignatureOld($timestamp, $requestid, $digest, $path)
     {
+        $clientid = env('DOKU_CLIENT_ID');
+        $sharedkey = env('DOKU_SECRET_KEY');
+        \Log::info($sharedkey);
         $abc = "Client-Id:" . $clientid . "\n" . "Request-Id:" . $requestid . "\n" . "Request-Timestamp:" . $timestamp . "\n" . "Request-Target:" . $path . "\n" . "Digest:" . $digest;
         \Log::info($abc);
         $signature = base64_encode(hash_hmac('sha256', $abc, $sharedkey, true));
@@ -192,8 +254,6 @@ class DokuUtils
     public static function generateCheckoutUrl($sessionid, $name, $email, $amount, $type, $orderType)
     {
         $clientId = env("DOKU_CLIENT_ID");
-        $secretKey = env("DOKU_SECRET_KEY");
-        \Log::info('SharedKey :' . $secretKey);
         \Log::info('SessionId : ' . $sessionid);
         $requestId = DokuUtils::generateRequestid();
         $currentDateTime = new \DateTime();
@@ -244,9 +304,9 @@ class DokuUtils
             ],
         ];
 
-        $digest = DokuUtils::generateDigestOld($Body);
+        $digest = DokuUtils::generateDigestOldGenerate($Body);
         \Log::info(json_encode($Body));
-        $signature = DokuUtils::generateSignatureOld($clientId, $secretKey, $timestamp, $requestId, $digest, $path);
+        $signature = DokuUtils::generateSignatureOld($timestamp, $requestId, $digest, $path);
 
         // Inisialisasi CURL
         $ch = curl_init($url);

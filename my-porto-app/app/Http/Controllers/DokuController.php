@@ -7,6 +7,7 @@ use App\Utils\DokuUtils;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Token;
 use Carbon\Carbon;
+use App\Utils\ControllerUtils;
 
 class DokuController extends Controller
 {
@@ -239,74 +240,150 @@ class DokuController extends Controller
         \Log::info('============ Start Notification Process ============');
         $requestData = $request->json()->all();
         $requestBody = $request->all();
+        $notificationBody = file_get_contents('php://input');
+         //prepare data for update status snap
         $partnerServiceId = $requestData['partnerServiceId'] ?? null;
         $customerNo = $requestData['partnerServiceId'] ?? null;
         $virtualAccountNo = $requestData['virtualAccountNo'] ?? null;
         $virtualAccountName = $requestData['virtualAccountName'] ?? null;
         $paymentRequestId = $requestData['paymentRequestId'] ?? null;
+        $invoiceSnap = $requestData['trxId'] ?? null;
+        $paymentChannelSnap = $requestData['additionalInfo']['channel'] ?? null;
+        //prepare data for update status non snap
+        $invoice = $requestData['order']['invoice_number'] ?? null;
+        $paymentCode = $requestData['virtual_account_info']['virtual_account_number'] ?? 
+               ($requestData['card_payment']['response_code'] ?? 
+               ($requestData['online_to_offline_info']['payment_code'] ?? 
+               ($requestData['shopeepay_payment']['identifier'][0]['value'] ?? 
+               ($requestData['wallet']['token_id'] ?? 
+               ($requestData['ovo_payment']['response_code'] ?? 
+               ($requestData['refund']['response_code'] ?? null))))));
+        $paymentChannel = $requestData['channel']['id'] ?? null;
         //signature validation
-        $requestSignature = $request->header('X-SIGNATURE');
-        $requestAuthorization = $request->header('Authorization');
-        $digest = DokuUtils::generateDigestJSON($requestData);
-        $requestTimestamp = $request->header('X-TIMESTAMP');
-        $hour = substr($requestTimestamp, 11, 2);
-        $hour = str_pad($hour - 7, 2, '0', STR_PAD_LEFT);
-        $newTimestamp = substr_replace($requestTimestamp, $hour, 11, 2);
-        $newTimestamp = substr($newTimestamp, 0, -6) . 'Z';
-        $requestClientKey = $request->header('X-PARTNER-ID');
-        $path = "/api/v1/transfer-va/payment";
-        $localSignature = DokuUtils::generateSignatureSymmetric($requestAuthorization, $digest, $requestTimestamp, $path);
-        $headerString = '';
-        foreach($request->header() as $key => $value) {
-            $headerString .= $key . ': ' . implode(', ', $value) . ', ';
-        }
-        $headerString = rtrim($headerString, ', ');
-        \Log::info('Request Header: ' . $headerString);
-        \Log::info('Request Body : ' . json_encode($requestData));
-        \Log::info('Local Signature : ' . $localSignature);
-        $validator = Validator::make([
-            'X-SIGNATURE' => $requestSignature
-        ], [
-            'X-SIGNATURE' => 'required|in:'.$localSignature
-        ]);
+        $requestSignature = $request->header('X-SIGNATURE') ?? null;
+        switch ($requestSignature) {
+            case null:
+                $requestSignatureOld = $request->header('Signature');
+                $requestTimestamp = $request->header('Request-Timestamp');
+                $requestId = $request->header('Request-Id');
+                $digest = DokuUtils::generateDigestOld($requestData);
+                $hour = substr($requestTimestamp, 11, 2);
+                $hour = str_pad($hour - 7, 2, '0', STR_PAD_LEFT);
+                $newTimestamp = substr_replace($requestTimestamp, $hour, 11, 2);
+                $newTimestamp = substr($newTimestamp, 0, -6) . 'Z';
+                $path = "/api/v1/transfer-va/payment";
+                $localSignature = 'HMACSHA256='.DokuUtils::generateSignatureOld($requestTimestamp, $requestId, $digest, $path);
+                $headerString = '';
+                foreach($request->header() as $key => $value) {
+                    $headerString .= $key . ': ' . implode(', ', $value) . ', ';
+                }
+                $headerString = rtrim($headerString, ', ');
+                \Log::info('Request Header: ' . $headerString);
+                \Log::info('Request Body : ' . json_encode($requestData));
+                \Log::info('Local Signature : ' . $localSignature);
+                $validator = Validator::make([
+                    'Signature' => $requestSignatureOld
+                ], [
+                    'Signature' => 'required|in:'.$localSignature
+                ]);
 
-        if ($validator->fails()) {
-            $errorMessages = $validator->errors()->all();
-            \Log::info('Error messages: ' . json_encode($errorMessages));
+                if ($validator->fails()) {
+                    $errorMessages = $validator->errors()->all();
+                    \Log::info('Error messages: ' . json_encode($errorMessages));
 
-            $responseCode = '4017300';
-            $responseMessage = 'Unauthorized. Unknown Client';
-            if (in_array('The selected x- s i g n a t u r e is invalid.', $errorMessages)) {
-                $responseMessage = 'Unauthorized. Signature';
-            }
-            $newTimestamp = DokuUtils::generateTimestamp();
+                    $responseCode = '4017300';
+                    $responseMessage = 'Unauthorized. Unknown Client';
+                    if (in_array('The selected x- s i g n a t u r e is invalid.', $errorMessages)) {
+                        $responseMessage = 'Unauthorized. Signature';
+                    }
+                    $newTimestamp = DokuUtils::generateTimestamp();
 
-            return response()->json([
-                'responseCode' => $responseCode,
-                'responseMessage' => $responseMessage,
-            ], 401)
-            ->header('X-CLIENT-KEY', $requestClientKey)
-            ->header('X-TIMESTAMP', $newTimestamp);
-            \Log::info('Response sent with status code 401', [
-                'responseCode' => $responseCode,
-                'responseMessage' => $responseMessage
-            ]);
-        }else{
-        $responseBody = array(
-            'responseCode' => '2002500',
-            'responseMessage' => 'Success',
-            'virtualAccountData' => array(
-                'partnerServiceId' => $partnerServiceId,
-                'customerNo' => $customerNo,
-                'virtualAccountNo' => $virtualAccountNo,
-                'virtualAccountName' => $virtualAccountName,
-                'paymentRequestId' => $paymentRequestId
-                )
-            );
-        \Log::info('Response Body : ' . json_encode($responseBody,JSON_UNESCAPED_SLASHES));
-        $response = response()->json($responseBody);
-        return $response;
-        }
+                    return response()->json([
+                        'responseCode' => $responseCode,
+                        'responseMessage' => $responseMessage,
+                    ], 401)
+                    ->header('X-TIMESTAMP', $newTimestamp);
+                    \Log::info('Response sent with status code 401', [
+                        'responseCode' => $responseCode,
+                        'responseMessage' => $responseMessage
+                    ]);
+                }else{
+                $responseBody = array(
+                    'responseCode' => '2002500',
+                    'responseMessage' => 'Success'
+                    );
+                ControllerUtils::updatePaymentStatus($invoice, $paymentCode, $paymentChannel);
+                \Log::info('Response Body : ' . json_encode($responseBody,JSON_UNESCAPED_SLASHES));
+                $response = response()->json($responseBody);
+                return $response;
+                }
+                break;
+            deafult:;
+                $requestAuthorization = $request->header('Authorization');
+                $digest = DokuUtils::generateDigestJSON($requestData);
+                $requestTimestamp = $request->header('X-TIMESTAMP');
+                $hour = substr($requestTimestamp, 11, 2);
+                $hour = str_pad($hour - 7, 2, '0', STR_PAD_LEFT);
+                $newTimestamp = substr_replace($requestTimestamp, $hour, 11, 2);
+                $newTimestamp = substr($newTimestamp, 0, -6) . 'Z';
+                $requestClientKey = $request->header('X-PARTNER-ID');
+                $path = "/api/v1/transfer-va/payment";
+                $localSignature = DokuUtils::generateSignatureSymmetric($requestAuthorization, $digest, $requestTimestamp, $path);
+                $headerString = '';
+                foreach($request->header() as $key => $value) {
+                    $headerString .= $key . ': ' . implode(', ', $value) . ', ';
+                }
+                $headerString = rtrim($headerString, ', ');
+                \Log::info('Request Header: ' . $headerString);
+                \Log::info('Request Body : ' . json_encode($requestData));
+                \Log::info('Local Signature : ' . $localSignature);
+                $validator = Validator::make([
+                    'X-SIGNATURE' => $requestSignature
+                ], [
+                    'X-SIGNATURE' => 'required|in:'.$localSignature
+                ]);
+
+                if ($validator->fails()) {
+                    $errorMessages = $validator->errors()->all();
+                    \Log::info('Error messages: ' . json_encode($errorMessages));
+
+                    $responseCode = '4017300';
+                    $responseMessage = 'Unauthorized. Unknown Client';
+                    if (in_array('The selected x- s i g n a t u r e is invalid.', $errorMessages)) {
+                        $responseMessage = 'Unauthorized. Signature';
+                    }
+                    $newTimestamp = DokuUtils::generateTimestamp();
+
+                    return response()->json([
+                        'responseCode' => $responseCode,
+                        'responseMessage' => $responseMessage,
+                    ], 401)
+                    ->header('X-CLIENT-KEY', $requestClientKey)
+                    ->header('X-TIMESTAMP', $newTimestamp);
+                    \Log::info('Response sent with status code 401', [
+                        'responseCode' => $responseCode,
+                        'responseMessage' => $responseMessage
+                    ]);
+                }else{
+                $responseBody = array(
+                    'responseCode' => '2002500',
+                    'responseMessage' => 'Success',
+                    'virtualAccountData' => array(
+                        'partnerServiceId' => $partnerServiceId,
+                        'customerNo' => $customerNo,
+                        'virtualAccountNo' => $virtualAccountNo,
+                        'virtualAccountName' => $virtualAccountName,
+                        'paymentRequestId' => $paymentRequestId
+                        )
+                    );
+                ControllerUtils::updatePaymentStatus($invoiceSnap, $virtualAccountNo, $paymentChannelSnap);
+                \Log::info('Response Body : ' . json_encode($responseBody,JSON_UNESCAPED_SLASHES));
+                $response = response()->json($responseBody);
+                return $response;
+                }
+                break;
+        };
+        
     }
 
     

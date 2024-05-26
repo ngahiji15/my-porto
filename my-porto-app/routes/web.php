@@ -32,5 +32,6 @@ Route::get('/payment', [FrontendController::class, 'paymentPage'])->name('paymen
 Route::get('/proceed-payment', [FrontendController::class, 'forwardData']);
 Route::get('/test-session', [FrontendController::class, 'testSessionId']);
 Route::get('/doku-checkout', [BackendController::class, 'generateCheckout']);
+Route::get('/result/{invoice}', [FrontendController::class, 'resultPayment']);
 
 

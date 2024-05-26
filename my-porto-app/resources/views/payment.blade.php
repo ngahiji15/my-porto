@@ -32,7 +32,6 @@
                         </div>
                     </div>
                 @else
-                    <!-- Order details, Product list, and Make Payment button in a single card -->
                     <div class="col-lg-10 col-12 mx-auto">
                         <div class="card mb-4 shadow-sm rounded">
                             <div class="card-body">
@@ -44,8 +43,8 @@
                                             <td>{{ $invoice }}</td>
                                         </tr>
                                         <tr>
-                                            <th>Expired Date</th>
-                                            <td>{{ $expiredDate }}</td>
+                                            <th>{{ $status == 'SUCCESS' ? 'Payment Date' : 'Expired Date' }}</th>
+                                            <td>{{ $status == 'SUCCESS' ? $expiredDate : $expiredDate }}</td>
                                         </tr>
                                         <tr>
                                             <th>Customer Name</th>
@@ -63,10 +62,6 @@
                                         <tr>
                                             <th>VA Number</th>
                                             <td>12345</td>
-                                        </tr>
-                                        <tr>
-                                            <th>Payment Status</th>
-                                            <td>{{ $status }}</td>
                                         </tr>
                                         @endif
                                     </tbody>
@@ -114,8 +109,23 @@
 <script src="https://sandbox.doku.com/jokul-checkout-js/v1/jokul-checkout-1.0.0.js"></script>
 <script>
     document.getElementById('checkoutButton').addEventListener('click', function () {
-        loadJokulCheckout('{{$urlCheckout}}');
+        loadJokulCheckout('{{ $urlCheckout }}');
     });
+
+    @if($status == 'PENDING')
+    let expiredDate = new Date('{{ $expiredDate }}');
+    let timeLeft = Math.floor((expiredDate - new Date()) / (1000 * 60)); // Menghitung waktu tersisa dalam menit
+
+    if (timeLeft > 0) {
+        setTimeout(function() {
+            alert('Sorry, your payment time has expired. Please click the home button below to make the new transaction from the start, Thank you');
+            location.href = "/"; // Redirect ke halaman utama
+        }, timeLeft * 60 * 1000); // Convert menit menjadi milidetik
+    } else {
+        alert('Sorry, your payment time has expired. Please click the home button below to make the new transaction from the start, Thank you');
+        location.href = "/"; // Redirect ke halaman utama
+    }
+    @endif
 </script>
 
 <style>
@@ -131,14 +141,14 @@
     }
     .table th, .table td {
         vertical-align: middle;
-        padding: 0.25rem 0.75rem; /* Mengurangi padding untuk mengurangi jarak antar baris */
+        padding: 0.25rem 0.75rem;
     }
     .table th {
         width: 40%;
         color: #6c757d;
     }
     .no-margin-bottom {
-        margin-bottom: 0; /* Menghilangkan margin bawah pada elemen terakhir */
+        margin-bottom: 0;
     }
     .btn-black {
         background-color: #000;
@@ -150,7 +160,7 @@
         color: #fff;
     }
     cite {
-        font-size: 0.875rem; /* Mengatur ukuran font lebih kecil */
+        font-size: 0.875rem;
     }
 </style>
 @endsection

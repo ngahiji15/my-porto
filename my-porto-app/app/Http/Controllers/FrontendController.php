@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use App\Utils\ControllerUtils;
 use App\Utils\DokuUtils;
+use Carbon\Carbon;
 
 class FrontendController extends Controller
 {
@@ -93,7 +94,7 @@ class FrontendController extends Controller
         }else if($generateHttp === null){
             echo "Something wrong with system, please contact our admin.";
         }else{
-            echo "Something wring with website, please contact our admin.";
+            echo "Something wrong with website, please contact our admin.";
         }
     }
 
@@ -108,26 +109,81 @@ class FrontendController extends Controller
     public function paymentPage(Request $request)
     {
         $sessionId = $request->session()->getId();
-        //$sessionId = $request->session()->get('sessionId');////$sessionId = 'iRf0RINDjwahcGdJVdzVKOlGR28lRqME8gfckPx6';
-        \Log::info($sessionId);
-        $payment = Payment::where('session_id', $sessionId)->latest()->first();
-        \Log::info($payment);
-        $cartItems = $payment->cart ?? null;
-        $totalAmount = $payment->total_amount ?? null;
-        $method = $payment->payment_channel ?? null;
-        \Log::info($method);
-        $invoice = $payment->invoice_number ?? null;
-        $expiredDate = $payment->expired_date ?? null;
-        $userId = $payment->user_id ?? null;
-        $urlCheckout = $payment->payment_code ?? null;
-        $statusPayment = $payment->status ?? null;
-        \Log::info($userId);
+        $sessionIdOld = $request->session()->get('sessionId') ?? $sessionId;
+        
+        $payment = Payment::where('session_id', $sessionIdOld)->latest()->first();
+    
+        // Jika tidak ada pembayaran dengan sessionIdOld, gunakan sessionId saat ini
+        if (!$payment) {
+            $payment = Payment::where('session_id', $sessionId)->latest()->first();
+            $request->session()->put('sessionId', $sessionId);
+        } else {
+            $request->session()->put('sessionId', $sessionIdOld);
+        }
+    
+        if ($payment) {
+            // Ambil data pembayaran dari database
+            $cartItems = $payment->cart;
+            $totalAmount = $payment->total_amount;
+            $method = $payment->payment_channel;
+            $invoice = $payment->invoice_number;
+            $expiredDate = $payment->expired_date;
+            $userId = $payment->user_id;
+            $urlCheckout = $payment->payment_code;
+            $statusPayment = $payment->status;
+    
+            // Perbarui status sesi
+            $request->session()->put('status', $statusPayment);
+    
+            // Ambil data pengguna jika ada
+            $userData = User::where('id', $userId)->latest()->first();
+            $userName = $userData->name ?? null;
+    
+            // Hitung timeLeft jika statusnya masih 'PENDING'
+            $now = Carbon::now();
+            $expiryTime = Carbon::parse($expiredDate);
+            $timeLeft = $expiryTime->diffInMinutes($now);
+    
+            // Ubah expiredDate menjadi Payment Date jika statusnya 'SUCCESS'
+            if ($statusPayment == 'SUCCESS') {
+                $expiredDate = $payment->updateDate; // Ganti dengan kolom yang sesuai
+            }
+        } else {
+            // Jika tidak ada pembayaran, atur semua data menjadi null
+            $cartItems = null;
+            $totalAmount = null;
+            $method = null;
+            $invoice = null;
+            $expiredDate = null;
+            $userId = null;
+            $urlCheckout = null;
+            $statusPayment = null;
+            $userName = null;
+            $timeLeft = null;
+        }
+    
+        // Kirim data ke tampilan
+        return view('payment', [
+            'cartItems' => $cartItems, 
+            'totalAmount' => $totalAmount, 
+            'method' => $method, 
+            'invoice' => $invoice, 
+            'expiredDate' => $expiredDate, 
+            'name' => $userName, 
+            'urlCheckout' => $urlCheckout, 
+            'status' => $statusPayment,
+            'timeLeft' => $timeLeft
+        ]);
+    }
+    
+    
 
-        $userData = User::where('id', $userId)->latest()->first();
-        $userName = $userData->name ?? null;
-
-        \Log::info($totalAmount);
-        //validasi sessionId (if SessionId == getSessionId --> check status (status == PENDING --> continue send data[url and other], status == COMPLETED --> Send data success payment already paid), SessionId != getSessionId --> send alert your session has ended, please try with new checkout.)
-        return view('payment', ['cartItems' => $cartItems, 'totalAmount' => $totalAmount, 'method' => $method, 'invoice' => $invoice, 'expiredDate' => $expiredDate, 'name' => $userName, 'urlCheckout' => $urlCheckout, 'status'=> $statusPayment]);
+    public function resultPayment(Request $request, $invoice)
+    {
+        \Log::info('==== Callback Starting ====');
+        \Log::info('Invoice : '.$invoice);
+        $payment = Payment::where('invoice_number', $invoice)->latest()->first();
+        $sessionId = $payment->session_id ?? null;
+        return redirect()->route('payment')->with(['sessionId' => $sessionId]);
     }
 }
