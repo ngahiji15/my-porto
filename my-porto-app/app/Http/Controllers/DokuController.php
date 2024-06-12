@@ -134,6 +134,11 @@ class DokuController extends Controller
         if (strlen($prefixNumber) < 8) {
             $prefixNumber = str_pad($prefixNumber, 8, ' ', STR_PAD_LEFT);
         }
+        if (strpos($prefixNumber, '8922') !== false) {
+            $amount = "0.00";
+        } else {
+            $amount = "10,000.00"; 
+        }
         $accountNumber = $requestData['customerNo'];
         $virtualAccountNumber = $prefixNumber . $accountNumber;
         $headerString = '';
@@ -162,7 +167,7 @@ class DokuController extends Controller
                     )
                 ),
                 'totalAmount' => array(
-                'value' => '0.00',
+                'value' => $amount,
                 'currency' => 'IDR'
                 )
             ),
@@ -178,7 +183,7 @@ class DokuController extends Controller
                     ),
                     'billSubCompany' => '00001',
                     'billAmount' => array(
-                            'value' => '1000000',
+                            'value' => $amount,
                             'currency' => 'IDR'
                     ),
                     'additionalInfo' => array(
@@ -211,7 +216,7 @@ class DokuController extends Controller
                 ) 
             ),
             'totalAmount' => array(
-                'value' => '0.00',
+                'value' => $amount,
                 'currency' => 'IDR'
             )
         );
