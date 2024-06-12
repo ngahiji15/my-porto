@@ -163,6 +163,7 @@ class DokuController extends Controller
                 'inquiryRequestId' => DokuUtils::generateRequestid(),
                 'virtualAccountTrxType' => '2',
                 'additionalInfo' => array(
+                'trxId' => DokuUtils::generateRequestid(),
                 'virtualAccountConfig' => array(
                     'reusableStatus' => true
                     )
