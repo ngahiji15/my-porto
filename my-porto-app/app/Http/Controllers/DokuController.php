@@ -212,10 +212,10 @@ class DokuController extends Controller
             'subCompany' => '',
             'virtualAccountTrxType' => '2',
             'additionalInfo' => array(
+                'trxId' => DokuUtils::generateRequestid(),
                 'virtualAccountConfig' => array(
                     'reusableStatus' => true
-                ),
-                'trxId' => DokuUtils::generateRequestid(), 
+                )
             ),
             'totalAmount' => array(
                 'value' => $amount,
