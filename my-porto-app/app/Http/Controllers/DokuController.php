@@ -136,8 +136,10 @@ class DokuController extends Controller
         }
         if (strpos($prefixNumber, '8922') !== false) {
             $amount = "0.00";
+            $typeBill = "2";
         } else {
             $amount = "10000.00"; 
+            $typeBill = "C";
         }
         $accountNumber = $requestData['customerNo'];
         $virtualAccountNumber = $prefixNumber . $accountNumber;
@@ -211,7 +213,7 @@ class DokuController extends Controller
             ),
             'inquiryRequestId' => DokuUtils::generateRequestid(),
             'subCompany' => '',
-            'virtualAccountTrxType' => '2',
+            'virtualAccountTrxType' => $typeBill,
             'additionalInfo' => array(
                 'trxId' => DokuUtils::generateRequestid(),
                 'virtualAccountConfig' => array(
