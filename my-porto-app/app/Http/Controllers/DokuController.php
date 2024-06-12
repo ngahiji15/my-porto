@@ -214,7 +214,8 @@ class DokuController extends Controller
             'additionalInfo' => array(
                 'virtualAccountConfig' => array(
                     'reusableStatus' => true
-                ) 
+                ),
+                'trxId' => DokuUtils::generateRequestid(), 
             ),
             'totalAmount' => array(
                 'value' => $amount,
