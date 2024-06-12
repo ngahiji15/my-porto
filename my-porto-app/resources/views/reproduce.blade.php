@@ -13,7 +13,7 @@
 </head>
 <body>
     <button type="button" id="buttonPay">get url</button>
-    
+    <script src="https://sandbox.doku.com/jokul-checkout-js/v1/jokul-checkout-1.0.0.js"></script>
     <script>
         var checkoutButton = document.getElementById('buttonPay');
 
@@ -41,7 +41,8 @@
                     currency: "IDR",
                     session_id: "DOKUTEST",
                     disable_retry_payment: true,
-                    callback_url: "http://doku.com",
+                    callback_url: "www.doku.com",
+                    callback_url_cancel: "www.google.com",
                     auto_redirect: true,
                     line_items: [{
                         name: "Fresh flowers",
@@ -87,6 +88,8 @@
                 },
                 success: function(response) {
                     console.log(response);
+                    const paymentUrl = response.response.payment.url;
+                    loadJokulCheckout(paymentUrl);
                     // Handle successful response here
                 },
                 error: function(xhr, status, error) {

@@ -18,8 +18,7 @@
             <div class="row">
                 <div class="col-lg-10 col-12 mx-auto">
                     <div class="section-title-wrap-2 d-flex justify-content-center align-items-center mb-5">
-                        <h2 class="text-white ms-4 mb-0">
-                            <i class="bi bi-cart-fill"></i> Please complete your payment.
+                        <h2 class="text-white ms-4 mb-0"> {{ $status == 'SUCCESS' ? 'Thank you for your payment' : 'Please complete your payment' }}
                         </h2>
                     </div>
                 </div>
@@ -27,7 +26,7 @@
                 @if($cartItems == null)
                     <div class="col-lg-10 col-12 mx-auto">
                         <div class="alert alert-warning text-center">
-                            <p>Session anda telah habis, klik tombol di bawah untuk memulai kembali.</p>
+                            <p>Your Session has ended, please click button below for create a new transaction.</p>
                             <a href="{{ url('/') }}" class="btn btn-black">Home</a>
                         </div>
                     </div>
@@ -114,16 +113,16 @@
 
     @if($status == 'PENDING')
     let expiredDate = new Date('{{ $expiredDate }}');
-    let timeLeft = Math.floor((expiredDate - new Date()) / (1000 * 60)); // Menghitung waktu tersisa dalam menit
+    let timeLeft = Math.floor((expiredDate - new Date()) / (1000 * 60)); 
 
     if (timeLeft > 0) {
         setTimeout(function() {
             alert('Sorry, your payment time has expired. Please click the home button below to make the new transaction from the start, Thank you');
-            location.href = "/"; // Redirect ke halaman utama
-        }, timeLeft * 60 * 1000); // Convert menit menjadi milidetik
+            location.href = "/"; 
+        }, timeLeft * 60 * 1000); 
     } else {
         alert('Sorry, your payment time has expired. Please click the home button below to make the new transaction from the start, Thank you');
-        location.href = "/"; // Redirect ke halaman utama
+        location.href = "/"; 
     }
     @endif
 </script>

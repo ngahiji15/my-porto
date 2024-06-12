@@ -71,9 +71,9 @@ class FrontendController extends Controller
     public function forwardData(Request $request)
     {
         $sessionId = $request->session()->getId();
-        $cusName = $request->get('firstName');
-        $cusEmail = $request->get('email');
-        $paymentMethod = $request->get('pembayaran');
+        $cusName = $request->get('firstName') ?? null;
+        $cusEmail = $request->get('email') ?? null;
+        $paymentMethod = $request->get('pembayaran') ?? null;
         $dataPayment = ControllerUtils::getDataBySessionId($sessionId);
         $cart = $dataPayment['cart'] ?? null;
         $amount = $dataPayment['totalAmount'] ?? null;
@@ -83,19 +83,30 @@ class FrontendController extends Controller
             "email" => $cusEmail,
             "PaymentMethod" => $paymentMethod
         ];
-        $generateUrl = DokuUtils::generateCheckoutUrl($sessionId,  $cusName, $cusEmail, $amount, 'demo', 'Doku Experience');
-        $urlCheckout = $generateUrl['urlCheckout'] ?? null;
-        $generateHttp = $generateUrl['httpCode'] ?? null;
-        $generareMessage = $generateUrl['message'] ?? null;
-
-        //validasi http status
-        if($generateHttp === 200){
-            return redirect()->route('payment')->with(['sessionId' => $sessionId]);
-        }else if($generateHttp === null){
-            echo "Something wrong with system, please contact our admin.";
-        }else{
-            echo "Something wrong with website, please contact our admin.";
+        switch ($paymentMethod){
+            case 'A':
+                $generateUrl = DokuUtils::generateCheckoutUrl($sessionId,  $cusName, $cusEmail, $amount, 'demo', 'Doku Experience');
+                $urlCheckout = $generateUrl['urlCheckout'] ?? null;
+                $generateHttp = $generateUrl['httpCode'] ?? null;
+                $generareMessage = $generateUrl['message'] ?? null;
+        
+                //validasi http status
+                if($generateHttp === 200){
+                    return redirect()->route('payment')->with(['sessionId' => $sessionId]);
+                }else if($generateHttp === null){
+                    echo "Something wrong with system, please contact our admin.";
+                }else{
+                    echo "Something wrong with website, please contact our admin.";
+                };
+            break;
+            case 'B':
+                echo "Something wrong with website, please contact our admin.";
+            break;
+            case 'C':
+                echo "Something wrong with website, please contact our admin.";
+            break;
         }
+        
     }
 
     public function showPaymentPage(Request $request)
@@ -146,7 +157,7 @@ class FrontendController extends Controller
     
             // Ubah expiredDate menjadi Payment Date jika statusnya 'SUCCESS'
             if ($statusPayment == 'SUCCESS') {
-                $expiredDate = $payment->updateDate; // Ganti dengan kolom yang sesuai
+                $expiredDate = $payment->update_date; // Ganti dengan kolom yang sesuai
             }
         } else {
             // Jika tidak ada pembayaran, atur semua data menjadi null

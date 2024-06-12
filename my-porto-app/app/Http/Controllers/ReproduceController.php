@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use App\Utils\DokuUtils;
 
 class ReproduceController extends Controller
 {
@@ -121,5 +122,12 @@ class ReproduceController extends Controller
         $response ->header('Client-Id', $clientId)->header('Request-Id', $requestid)->header('Response-Timestamp', $timestamp)->header('Signature', $finalsignature);
         //$this->response->setJSON($notificationBody, 200);
         return $response;
+    }
+
+    public static function testPostMethodAllowed(Request $request)
+    {
+        $Checkout = DokuUtils::generateCheckoutUrl("12345", "alif", "alif@doku.com", 12000, "demo", "Reproduce");
+        $urlCheckout = $checkout['urlCheckout'] ?? null;
+        return $urlCheckout;
     }
 }

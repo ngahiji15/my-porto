@@ -17,8 +17,7 @@
             <div class="row">
                 <div class="col-lg-10 col-12 mx-auto">
                     <div class="section-title-wrap-2 d-flex justify-content-center align-items-center mb-5">
-                        <h2 class="text-white ms-4 mb-0">
-                            <i class="bi bi-cart-fill"></i> Please select product you want to checkout.</h2>
+                        <h2 class="text-white ms-4 mb-0">Please select product you want to checkout</h2>
                     </div>
                 </div>
                 <div class="col-lg-4 col-md-6 col-12">
@@ -84,7 +83,10 @@
         const checkoutButton = document.getElementById('checkout');
         let cart = {};
 
-        // Initialize cart from localStorage
+        // Clear the cart when the page loads
+        localStorage.removeItem('cart');
+
+        // Initialize cart from localStorage (if it still exists for some reason)
         if (localStorage.getItem('cart')) {
             cart = JSON.parse(localStorage.getItem('cart'));
             updateCartUI();
@@ -154,6 +156,7 @@
             }
             totalAmountElement.textContent = `Total Amount : IDR ${totalAmount.toLocaleString()}`;
         }
+
         function calculateTotalAmount() {
             let totalAmount = 0;
             for (let productId in cart) {
@@ -172,7 +175,6 @@
             // Redirect to checkout page and pass cart data and total amount as query parameters
             window.location.href = `/get-data-transactions?cart=${cartData}&totalAmount=${totalAmount}`;
         }
-
 
         // Event delegation for remove, increase, and decrease quantity buttons
         cartItemsElement.addEventListener('click', function(event) {

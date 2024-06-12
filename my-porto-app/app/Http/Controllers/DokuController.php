@@ -121,6 +121,110 @@ class DokuController extends Controller
         echo $resultSignature;
     }
 
+    public function inquiryBri(Request $request)
+    {
+        \Log::info('============ Start Inquiry Process ============');
+        $requestSignature = $request->header('X-SIGNATURE');
+        $requestTimestamp = $request->header('X-TIMESTAMP');
+        $requestClientId = $request->header('X-PARTNER-ID');
+        $requestAuthorization = $request->header('Authorization');
+        $requestExternalId = $request->header('X-EXTERNAL-ID');
+        $requestData = $request->json()->all();
+        $prefixNumber = $requestData['partnerServiceId'];
+        $accountNumber = $requestData['customerNo'];
+        $virtualAccountNumber = $prefixNumber . $accountNumber;
+        $headerString = '';
+        foreach($request->header() as $key => $value) {
+            $headerString .= $key . ': ' . implode(', ', $value) . ', ';
+        }
+        $headerString = rtrim($headerString, ', ');
+        \Log::info('Request Header: ' . $headerString);
+        \Log::info('Request Body : ' . json_encode($requestData));
+        //prepare body
+        $responseBody = array(
+            'responseCode' => '2002400',
+            'responseMessage' => 'Successful',
+            'virtualAccountData' => array(
+                'partnerServiceId' => '        ' . $prefixNumber,
+                'customerNo' => $accountNumber,
+                'virtualAccountNo' => $virtualAccountNumber,
+                'virtualAccountName' => 'Ashddq Customer',
+                'virtualAccountEmail' => 'customer@ashddq.xyz',
+                'virtualAccountPhone'=> '08123456789',
+                'trxId' => DokuUtils::generateRequestid(),
+                'virtualAccountTrxType' => '2',
+                'additionalInfo' => array(
+                'virtualAccountConfig' => array(
+                    'reusableStatus' => true
+                    )
+                ),
+                'totalAmount' => array(
+                'value' => '0.00',
+                'currency' => 'IDR'
+                )
+            ),
+            'billDetails' => [
+                array(
+                    'billCode' => '01',
+                    'billNo' => 'REF' . DokuUtils::generateRequestid(),
+                    'billName' => 'CUSTOMER ASHDDQ',
+                    'billShortName' => 'CUSTOMER',
+                    'billDescription' => array(
+                        'english' => 'PAYMENT AT ASHDDQ',
+                        'indonesia' => 'PEMBAYARAN DI ASHDDQ'
+                    ),
+                    'billSubCompany' => '00001',
+                    'billAmount' => array(
+                            'value' => '1000000',
+                            'currency' => 'IDR'
+                    ),
+                    'additionalInfo' => array(
+                            'id' => '',
+                            'en' => ''
+                    )
+                )
+            ],
+            'freeTexts' => [
+                array(
+                    'english' => 'Thank you.',
+                    'indonesia' => 'Terima kasih.'
+                )
+            ],
+            'feeAmount' => array(
+                'value' => '0',
+                'currency' => 'IDR'
+            ),
+            'inquiryStatus' => 'SUCCESS',
+            'inquiryReason'=> array(
+                'english' => 'Success',
+                'indonesia' => 'Sukses'
+            ),
+            'inquiryRequestId' => DokuUtils::generateRequestid(),
+            'subCompany' => '',
+            'virtualAccountTrxType' => '2',
+            'additionalInfo' => array(
+                'virtualAccountConfig' => array(
+                    'reusableStatus' => true
+                ) 
+            ),
+            'totalAmount' => array(
+                'value' => '0.00',
+                'currency' => 'IDR'
+            )
+        );
+        \Log::info('Response Body : ' . json_encode($responseBody));
+        $newTimestamp = DokuUtils::generateTimestamp();
+        $newExtId = DokuUtils::generateRequestid();
+        $digest = DokuUtils::generateDigest($responseBody);
+        $path = '/api/snap/bri-inquiry';
+        $ClientId = env('DOKU_CLIENT_ID');
+        $signature = DokuUtils::generateSignatureSymmetric($requestAuthorization, $digest, $newTimestamp, $path);
+        $response = response()->json($responseBody);
+        $response ->header('X-PARTNER-ID', $ClientId)->header('X-EXTERNAL-ID', $newExtId)->header('X-TIMESTAMP', $newTimestamp)->header('X-SIGNATURE', $signature);
+
+        return $response;
+    }
+
 
     public function inquiryDanamon(Request $request)
     {
