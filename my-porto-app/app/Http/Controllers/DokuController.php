@@ -160,6 +160,7 @@ class DokuController extends Controller
                 'virtualAccountEmail' => 'customer@ashddq.xyz',
                 'virtualAccountPhone'=> '08123456789',
                 'trxId' => DokuUtils::generateRequestid(),
+                'inquiryRequestId' => DokuUtils::generateRequestid(),
                 'virtualAccountTrxType' => '2',
                 'additionalInfo' => array(
                 'virtualAccountConfig' => array(
