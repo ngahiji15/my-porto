@@ -163,7 +163,7 @@ class DokuController extends Controller
                 'virtualAccountPhone'=> '08123456789',
                 'trxId' => DokuUtils::generateRequestid(),
                 'inquiryRequestId' => DokuUtils::generateRequestid(),
-                'virtualAccountTrxType' => '2',
+                'virtualAccountTrxType' => $typeBill,
                 'additionalInfo' => array(
                 'trxId' => DokuUtils::generateRequestid(),
                 'virtualAccountConfig' => array(
@@ -173,9 +173,8 @@ class DokuController extends Controller
                 'totalAmount' => array(
                 'value' => $amount,
                 'currency' => 'IDR'
-                )
-            ),
-            'billDetails' => [
+                ),
+                'billDetails' => [
                 array(
                     'billCode' => '01',
                     'billNo' => 'REF' . DokuUtils::generateRequestid(),
@@ -186,44 +185,24 @@ class DokuController extends Controller
                         'indonesia' => 'PEMBAYARAN DI ASHDDQ'
                     ),
                     'billSubCompany' => '00001',
-                    'billAmount' => array(
-                            'value' => $amount,
-                            'currency' => 'IDR'
-                    ),
                     'additionalInfo' => array(
                             'id' => '',
                             'en' => ''
                     )
                 )
-            ],
-            'freeTexts' => [
-                array(
-                    'english' => 'Thank you.',
-                    'indonesia' => 'Terima kasih.'
-                )
-            ],
-            'feeAmount' => array(
-                'value' => '0',
-                'currency' => 'IDR'
+                ],
+                'inquiryStatus' => '00',
+                'inquiryReason'=> array(
+                    'english' => 'Success',
+                    'indonesia' => 'Sukses'
+                ),
+                'freeTexts' => [
+                    array(
+                        'english' => 'Thank you.',
+                        'indonesia' => 'Terima kasih.'
+                    )
+                ]
             ),
-            'inquiryStatus' => 'SUCCESS',
-            'inquiryReason'=> array(
-                'english' => 'Success',
-                'indonesia' => 'Sukses'
-            ),
-            'inquiryRequestId' => DokuUtils::generateRequestid(),
-            'subCompany' => '',
-            'virtualAccountTrxType' => $typeBill,
-            'additionalInfo' => array(
-                'trxId' => DokuUtils::generateRequestid(),
-                'virtualAccountConfig' => array(
-                    'reusableStatus' => true
-                )
-            ),
-            'totalAmount' => array(
-                'value' => $amount,
-                'currency' => 'IDR'
-            )
         );
         \Log::info('Response Body : ' . json_encode($responseBody));
         $newTimestamp = DokuUtils::generateTimestamp();
