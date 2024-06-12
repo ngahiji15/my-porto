@@ -137,7 +137,7 @@ class DokuController extends Controller
         if (strpos($prefixNumber, '8922') !== false) {
             $amount = "0.00";
         } else {
-            $amount = "10,000.00"; 
+            $amount = "10.000.00"; 
         }
         $accountNumber = $requestData['customerNo'];
         $virtualAccountNumber = $prefixNumber . $accountNumber;
