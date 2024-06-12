@@ -174,23 +174,6 @@ class DokuController extends Controller
                 'value' => $amount,
                 'currency' => 'IDR'
                 ),
-                'billDetails' => [
-                array(
-                    'billCode' => '01',
-                    'billNo' => 'REF' . DokuUtils::generateRequestid(),
-                    'billName' => 'CUSTOMER ASHDDQ',
-                    'billShortName' => 'CUSTOMER',
-                    'billDescription' => array(
-                        'english' => 'PAYMENT AT ASHDDQ',
-                        'indonesia' => 'PEMBAYARAN DI ASHDDQ'
-                    ),
-                    'billSubCompany' => '00001',
-                    'additionalInfo' => array(
-                            'id' => '',
-                            'en' => ''
-                    )
-                )
-                ],
                 'inquiryStatus' => '00',
                 'inquiryReason'=> array(
                     'english' => 'Success',
