@@ -113,20 +113,31 @@ class DokuUtils
     public static function generateDigestJSON($body)
     {
         \Log::info('----- Generate Digest -----');
-        if (isset($body['partnerServiceId'])) {
-            $body['partnerServiceId'] = "    " . $body['partnerServiceId'];
+        if (is_array($body)) {
+            if (isset($body['partnerServiceId'])) {
+                \Log::info('Original partnerServiceId: ' . $body['partnerServiceId']);
+                $body['partnerServiceId'] = "   " . $body['partnerServiceId'];
+                \Log::info('Modified partnerServiceId: ' . $body['partnerServiceId']);
+            }
+            if (isset($body['virtualAccountNo'])) {
+                \Log::info('Original virtualAccountNo: ' . $body['virtualAccountNo']);
+                $body['virtualAccountNo'] = "   " . $body['virtualAccountNo'];
+                \Log::info('Modified virtualAccountNo: ' . $body['virtualAccountNo']);
+            }
+            $jsonBody = json_encode($body, JSON_UNESCAPED_SLASHES);
+            \Log::info('Modified Body:');
+            \Log::info($jsonBody);
+            \Log::info('JSON Body:');
+            \Log::info($jsonBody);
+            $digest = hash('sha256', $jsonBody);
+            \Log::info('Digest: ' . $digest);
+            return $digest;
+        } else {
+            \Log::error('Input body is not a valid JSON string or array.');
+            return null;
         }
-        $jsonBody = json_encode($body, JSON_UNESCAPED_SLASHES);
-        \Log::info($body);
-        \Log::info($jsonBody);
-        $digest = hash('sha256', $jsonBody);
-        \Log::info('Digest: ' . $digest);
-    
-        return $digest;
     }
-    
-    
-
+       
     public static function generateRequestid()
     {
         $requestid = "ASHDDQ".date('YmdHis');

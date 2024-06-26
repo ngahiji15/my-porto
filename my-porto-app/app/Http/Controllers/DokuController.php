@@ -150,7 +150,36 @@ class DokuController extends Controller
         $headerString = rtrim($headerString, ', ');
         \Log::info('Request Header: ' . $headerString);
         \Log::info('Request Body : ' . json_encode($requestData));
-        //prepare body
+        //signature validation
+        $digestRequest = DokuUtils::generateDigestJSON($requestData);
+        $path = '/api/v1.1/transfer-va/inquiry';
+        $localSignature = DokuUtils::generateSignatureSymmetric($requestAuthorization, $digestRequest, $requestTimestamp, $path);
+        $validator = Validator::make([
+            'Signature' => $requestSignature
+        ], [
+            'Signature' => 'required|in:'.$localSignature
+        ]);
+        if ($validator->fails()) {
+            $errorMessages = $validator->errors()->all();
+            \Log::info('Error messages: ' . json_encode($errorMessages));
+
+            $responseCode = '4017300';
+            $responseMessage = 'Unauthorized. Unknown Client';
+            if (in_array('The selected x- s i g n a t u r e is invalid.', $errorMessages)) {
+                $responseMessage = 'Unauthorized. Signature';
+            }
+            $newTimestamp = DokuUtils::generateTimestamp();
+
+            return response()->json([
+                'responseCode' => $responseCode,
+                'responseMessage' => $responseMessage,
+            ], 401)
+            ->header('X-TIMESTAMP', $newTimestamp);
+            \Log::info('Response sent with status code 401', [
+                'responseCode' => $responseCode,
+                'responseMessage' => $responseMessage
+            ]);
+        }else{
         $responseBody = array(
             'responseCode' => '2002400',
             'responseMessage' => 'Successful',
@@ -168,7 +197,19 @@ class DokuController extends Controller
                 'trxId' => DokuUtils::generateRequestid(),
                 'virtualAccountConfig' => array(
                     'reusableStatus' => true
+                ),
+                'settlement' => [
+                    array(
+                        'type' => 'PERCENTAGE',
+                        'value' => 50,
+                        'bank_account_settlement_id' => 'SBS-0002-20221114153726296'
+                    ),
+                    array(
+                        'type' => 'PERCENTAGE',
+                        'value' => 50,
+                        'bank_account_settlement_id' => 'SBS-0003-20221114153737084'
                     )
+                ]
                 ),
                 'totalAmount' => array(
                 'value' => $amount,
@@ -191,13 +232,13 @@ class DokuController extends Controller
         $newTimestamp = DokuUtils::generateTimestamp();
         $newExtId = DokuUtils::generateRequestid();
         $digest = DokuUtils::generateDigest($responseBody);
-        $path = '/api/snap/danamon-inquiry';
         $ClientId = env('DOKU_CLIENT_ID');
         $signature = DokuUtils::generateSignatureSymmetric($requestAuthorization, $digest, $newTimestamp, $path);
         $response = response()->json($responseBody);
         $response ->header('X-PARTNER-ID', $ClientId)->header('X-EXTERNAL-ID', $newExtId)->header('X-TIMESTAMP', $newTimestamp)->header('X-SIGNATURE', $signature);
 
         return $response;
+        }
     }
 
     public function generateQRIS(Request $request)
@@ -217,7 +258,7 @@ class DokuController extends Controller
         $notificationBody = file_get_contents('php://input');
          //prepare data for update status snap
         $partnerServiceId = $requestData['partnerServiceId'] ?? null;
-        $customerNo = $requestData['partnerServiceId'] ?? null;
+        $customerNo = $requestData['customerNo'] ?? null;
         $virtualAccountNo = $requestData['virtualAccountNo'] ?? null;
         $virtualAccountName = $requestData['virtualAccountName'] ?? null;
         $paymentRequestId = $requestData['paymentRequestId'] ?? null;
@@ -235,6 +276,7 @@ class DokuController extends Controller
         $paymentChannel = $requestData['channel']['id'] ?? null;
         //signature validation
         $requestSignature = $request->header('X-SIGNATURE') ?? null;
+        \Log::info('Request Signature : ' . $requestSignature);
         switch ($requestSignature) {
             case null:
                 $requestSignatureOld = $request->header('Signature');
@@ -292,10 +334,15 @@ class DokuController extends Controller
                 return $response;
                 }
                 break;
-            deafult:;
+            default:
+                \Log::info('Starting notification SNAP Version');
                 $requestAuthorization = $request->header('Authorization');
+                \Log::info('Request Authorizaiton : ' . $requestAuthorization);
                 $digest = DokuUtils::generateDigestJSON($requestData);
+                \Log::info('json Body Expected : ');
+                \Log::info($requestData);
                 $requestTimestamp = $request->header('X-TIMESTAMP');
+                \Log::info('request X-TIMESTAMP : ' . $requestTimestamp);
                 $hour = substr($requestTimestamp, 11, 2);
                 $hour = str_pad($hour - 7, 2, '0', STR_PAD_LEFT);
                 $newTimestamp = substr_replace($requestTimestamp, $hour, 11, 2);
