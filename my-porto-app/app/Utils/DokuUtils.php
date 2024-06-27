@@ -124,7 +124,18 @@ class DokuUtils
                 $body['virtualAccountNo'] = "   " . $body['virtualAccountNo'];
                 \Log::info('Modified virtualAccountNo: ' . $body['virtualAccountNo']);
             }
-            $jsonBody = json_encode($body, JSON_UNESCAPED_SLASHES);
+            if (isset($body['additionalInfo']['settlement'])) {
+                foreach ($body['additionalInfo']['settlement'] as $index => $settlement) {
+                    \Log::info('Original settlement value: ' . $settlement['value']);
+                    $value = (float) $settlement['value'];
+                    if (floor($value) == $value) {
+                        $value = number_format($value, 1, '.', '');
+                    }
+                    $body['additionalInfo']['settlement'][$index]['value'] = (float) $value;
+                    \Log::info('Modified settlement value: ' . $body['additionalInfo']['settlement'][$index]['value']);
+                }
+            }
+            $jsonBody = json_encode($body, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
             \Log::info('Modified Body:');
             \Log::info($jsonBody);
             \Log::info('JSON Body:');
@@ -137,6 +148,8 @@ class DokuUtils
             return null;
         }
     }
+    
+    
        
     public static function generateRequestid()
     {

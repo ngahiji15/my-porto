@@ -200,14 +200,14 @@ class DokuController extends Controller
                 ),
                 'settlement' => [
                     array(
-                        'type' => 'PERCENTAGE',
+                        'bank_account_settlement_id' => 'SBS-0002-20221114153726296',
                         'value' => 50,
-                        'bank_account_settlement_id' => 'SBS-0002-20221114153726296'
+                        'type' => 'PERCENTAGE'
                     ),
                     array(
-                        'type' => 'PERCENTAGE',
+                        'bank_account_settlement_id' => 'SBS-0003-20221114153737084',
                         'value' => 50,
-                        'bank_account_settlement_id' => 'SBS-0003-20221114153737084'
+                        'type' => 'PERCENTAGE'
                     )
                 ]
                 ),
