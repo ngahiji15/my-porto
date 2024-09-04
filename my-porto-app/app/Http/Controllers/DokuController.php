@@ -130,16 +130,26 @@ class DokuController extends Controller
         $requestAuthorization = $request->header('Authorization');
         $requestExternalId = $request->header('X-EXTERNAL-ID');
         $requestData = $request->json()->all();
-        $prefixNumber = $requestData['partnerServiceId'];
         if (strlen($prefixNumber) < 8) {
             $prefixNumber = str_pad($prefixNumber, 8, ' ', STR_PAD_LEFT);
         }
         if (strpos($prefixNumber, '8922') !== false) {
             $amount = "0.00";
             $typeBill = "2";
+            $type = "PERCENTAGE";
+            $valueA = 50;
+            $valueB = 50;
         } else {
-            $amount = "10000.00"; 
+            $amount = "100000.00"; 
             $typeBill = "C";
+            $prefixNumber = $requestData['partnerServiceId'];
+            //fixed amount split settlement
+            $amountFee = 5000;
+            $amountFeeDoku = 4995;
+            $amountSettleToUser = $amount - $amountFee - $amountFeeDoku;
+            $type = "FIX";
+            $valueA = $amountSettleToUser;
+            $valueB = $amountFee;
         }
         $accountNumber = $requestData['customerNo'];
         $virtualAccountNumber = $prefixNumber . $accountNumber;
@@ -201,13 +211,13 @@ class DokuController extends Controller
                 'settlement' => [
                     array(
                         'bank_account_settlement_id' => 'SBS-0002-20221114153726296',
-                        'value' => 50,
-                        'type' => 'PERCENTAGE'
+                        'value' => $valueA,
+                        'type' => $type
                     ),
                     array(
                         'bank_account_settlement_id' => 'SBS-0003-20221114153737084',
-                        'value' => 50,
-                        'type' => 'PERCENTAGE'
+                        'value' => $valueB,
+                        'type' => $type
                     )
                 ]
                 ),

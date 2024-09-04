@@ -3,6 +3,7 @@
 namespace App\Utils;
 use App\Models\Payment;
 use App\Models\User;
+use App\Models\Inquiry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 
@@ -157,40 +158,73 @@ class DokuUtils
         return $requestid;
     }
 
-    public static function validationSignatureAsymmetric($waktu, $signature)
+    public static function validationSignatureAsymmetric($waktu, $signature, $process, $userId)
     {
         \Log::info('----- Signature Asymmetric Validation -----');
-        try {
-            $publicKey = <<<EOD
-            -----BEGIN PUBLIC KEY-----
-            MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3KhxblAJODF3TNsaWAIKOdJE4GF0zWJjRo3X0H8+lDqhfCHwQx01Znhv36IrJ8fHaqqPX3jQJdyCM88O4NcxbgNqhtbvyKqW7lza1zd/1eTtCBZ6q3qrr2N6h8EKI2nxz4e/GgcMnskkpGFSwjN89sGKWUxubn/1QSJwX7ET9JbJqNLiy1AXe3OglGqGHlqOurw820OaL88jfVdqlLo07Z2513/WJXOBU3WIp7bf9pKeewepxqdia0A+UTBBEyJNgg2wHj6csdXvDxDrDqkgT1gECRtxzZtGQ4+qfK9yjzD926LcA7waQvKZrHQO2ryrVppYNHZ5pOinWHewpjHW2wIDAQAB
-            -----END PUBLIC KEY-----
-            EOD;
-
-            // StringToSign = client_ID+"|"+X-TIMESTAMP
-            $StringToSign = env('DOKU_CLIENT_ID') . '|' . $waktu;
-            \Log::info('StringToSign : ' . $StringToSign);
-            $verifier = openssl_verify($StringToSign, base64_decode($signature), $publicKey, OPENSSL_ALGO_SHA256);
-            \Log::info('Result : '.$verifier);
-            if ($verifier === 1) {
-            \Log::info('Result : Signature Match');
-            \Log::info('----- Finish Signature Asymmetric Validation -----');
-            $result = 'Signature Match';
-            return $result;
-            } elseif ($verifier === 0) {
-            \Log::info('Result : Signature Unmatch');
-            \Log::info('----- Finish Signature Asymmetric Validation -----');
-            $result = 'Signature Unmatch';
-            return $result; // signature tidak valid
-            } else {
-            \Log::info('Result : Failed Verification Signature.');
-            \Log::info('----- Finish Signature Asymmetric Validation -----');
-            throw new Exception('Failed Verification Signature.');
-            }
-        } catch (Exception $error) {
-            echo 'Error in verifySignatureToken: ' . $error->getMessage();
-            \Log::info('----- Finish Signature Asymmetric Validation -----');
-            return false;
+        switch($process) {
+            case 'webhook':
+                try {
+                    $Inquiry = Inquiry::where('user_id', $userId)->latest()->first();
+                    $publicKey = <<<EOD
+                    -----BEGIN PUBLIC KEY-----
+                    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3KhxblAJODF3TNsaWAIKOdJE4GF0zWJjRo3X0H8+lDqhfCHwQx01Znhv36IrJ8fHaqqPX3jQJdyCM88O4NcxbgNqhtbvyKqW7lza1zd/1eTtCBZ6q3qrr2N6h8EKI2nxz4e/GgcMnskkpGFSwjN89sGKWUxubn/1QSJwX7ET9JbJqNLiy1AXe3OglGqGHlqOurw820OaL88jfVdqlLo07Z2513/WJXOBU3WIp7bf9pKeewepxqdia0A+UTBBEyJNgg2wHj6csdXvDxDrDqkgT1gECRtxzZtGQ4+qfK9yjzD926LcA7waQvKZrHQO2ryrVppYNHZ5pOinWHewpjHW2wIDAQAB
+                    -----END PUBLIC KEY-----
+                    EOD;
+                    $StringToSign = env('DOKU_CLIENT_ID') . '|' . $waktu;
+                    \Log::info('StringToSign : ' . $StringToSign);
+                    $verifier = openssl_verify($StringToSign, base64_decode($signature), $publicKey, OPENSSL_ALGO_SHA256);
+                    \Log::info('Result : '.$verifier);
+                    if ($verifier === 1) {
+                    \Log::info('Result : Signature Match');
+                    \Log::info('----- Finish Signature Asymmetric Validation -----');
+                    $result = 'Signature Match';
+                    return $result;
+                    } elseif ($verifier === 0) {
+                    \Log::info('Result : Signature Unmatch');
+                    \Log::info('----- Finish Signature Asymmetric Validation -----');
+                    $result = 'Signature Unmatch';
+                    return $result;
+                    } else {
+                    \Log::info('Result : Failed Verification Signature.');
+                    \Log::info('----- Finish Signature Asymmetric Validation -----');
+                    throw new Exception('Failed Verification Signature.');
+                    }
+                } catch (Exception $error) {
+                    echo 'Error in verifySignatureToken: ' . $error->getMessage();
+                    \Log::info('----- Finish Signature Asymmetric Validation -----');
+                    return false;
+                }
+            default:
+                try {
+                    $publicKey = <<<EOD
+                    -----BEGIN PUBLIC KEY-----
+                    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3KhxblAJODF3TNsaWAIKOdJE4GF0zWJjRo3X0H8+lDqhfCHwQx01Znhv36IrJ8fHaqqPX3jQJdyCM88O4NcxbgNqhtbvyKqW7lza1zd/1eTtCBZ6q3qrr2N6h8EKI2nxz4e/GgcMnskkpGFSwjN89sGKWUxubn/1QSJwX7ET9JbJqNLiy1AXe3OglGqGHlqOurw820OaL88jfVdqlLo07Z2513/WJXOBU3WIp7bf9pKeewepxqdia0A+UTBBEyJNgg2wHj6csdXvDxDrDqkgT1gECRtxzZtGQ4+qfK9yjzD926LcA7waQvKZrHQO2ryrVppYNHZ5pOinWHewpjHW2wIDAQAB
+                    -----END PUBLIC KEY-----
+                    EOD;
+                    $StringToSign = env('DOKU_CLIENT_ID') . '|' . $waktu;
+                    \Log::info('StringToSign : ' . $StringToSign);
+                    $verifier = openssl_verify($StringToSign, base64_decode($signature), $publicKey, OPENSSL_ALGO_SHA256);
+                    \Log::info('Result : '.$verifier);
+                    if ($verifier === 1) {
+                    \Log::info('Result : Signature Match');
+                    \Log::info('----- Finish Signature Asymmetric Validation -----');
+                    $result = 'Signature Match';
+                    return $result;
+                    } elseif ($verifier === 0) {
+                    \Log::info('Result : Signature Unmatch');
+                    \Log::info('----- Finish Signature Asymmetric Validation -----');
+                    $result = 'Signature Unmatch';
+                    return $result;
+                    } else {
+                    \Log::info('Result : Failed Verification Signature.');
+                    \Log::info('----- Finish Signature Asymmetric Validation -----');
+                    throw new Exception('Failed Verification Signature.');
+                    }
+                } catch (Exception $error) {
+                    echo 'Error in verifySignatureToken: ' . $error->getMessage();
+                    \Log::info('----- Finish Signature Asymmetric Validation -----');
+                    return false;
+                }
         }
     }
 
@@ -388,5 +422,13 @@ class DokuUtils
             ];
             return $data;
         }
+    }
+
+    public static function generateSignature($body)
+    {
+        \Log::info('====== generateSignature ======');
+        \Log::info($body);
+        $digest = base64_encode(hash('sha256', $body, true));
+        return $digest;
     }
 }

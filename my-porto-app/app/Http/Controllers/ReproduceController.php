@@ -130,4 +130,12 @@ class ReproduceController extends Controller
         $urlCheckout = $checkout['urlCheckout'] ?? null;
         return $urlCheckout;
     }
+
+    public static function generateDigest(Request $request)
+    {
+        $body = file_get_contents('php://input');
+        \Log::info($body);
+        $newsignature = DokuUtils::generateSignature($body);
+        echo $newsignature;
+    }
 }

@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ReproduceController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\BackendController;
+use App\Http\Controllers\WebhookController;
+use App\Http\Middleware\Authenticate;
 
 Route::get('/', function () {
     return view('home');
@@ -34,4 +36,14 @@ Route::get('/test-session', [FrontendController::class, 'testSessionId']);
 Route::get('/doku-checkout', [BackendController::class, 'generateCheckout']);
 Route::get('/result/{invoice}', [FrontendController::class, 'resultPayment']);
 
+//webhook
+Route::get('/webhook/register', [WebhookController::class, 'login'])->name('login');
+
+
+//testing
+
+
+Route::middleware([Authenticate::class])->group(function () {
+    Route::get('/haruslogin', [WebhookController::class, 'login']);
+});
 

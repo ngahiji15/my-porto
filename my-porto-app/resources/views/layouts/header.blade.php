@@ -25,6 +25,8 @@
 
         <link href="{{ asset('css/templatemo-first-portfolio-style.css') }}?v={{ filemtime(public_path('css/templatemo-first-portfolio-style.css')) }}" rel="stylesheet">
 
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3891271600868336"
+     crossorigin="anonymous"></script>
         
 <!--
 

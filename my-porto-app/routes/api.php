@@ -19,4 +19,4 @@ Route::post('/getBody', [ReproduceController::class, 'getBody']);
 Route::post('/signatureChecker', [DokuController::class, 'signatureChecker']);
 Route::post('/inquiry-bni', [ReproduceController::class, 'inquirybni']);
 Route::post('/reproducePost', [ReproduceController::class, 'testPostMethodAllowed']);
-//Route::post('/v1.1/transfer-va/inquiry', [DokuController::class, 'inquiryBri']);
+Route::post('/generateDigest', [ReproduceController::class, 'generateDigest']);
