@@ -197,4 +197,9 @@ class FrontendController extends Controller
         $sessionId = $payment->session_id ?? null;
         return redirect()->route('payment')->with(['sessionId' => $sessionId]);
     }
+
+    public function captureData(Request $request)
+    {
+        return view('capture');
+    }
 }

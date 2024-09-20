@@ -47,3 +47,5 @@ Route::middleware([Authenticate::class])->group(function () {
     Route::get('/haruslogin', [WebhookController::class, 'login']);
 });
 
+Route::get('/testcapturedata', [FrontendController::class, 'captureData']);
+
